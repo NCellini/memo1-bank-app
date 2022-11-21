@@ -80,7 +80,7 @@ public class Memo1BankApp {
 		return accountService.createDeposit(transaction);
 	}
 
-	@GetMapping("/accounts/transactions")
+	@GetMapping("/accounts/transactions/{cbu}")
 	public Collection<Transaction> getTransactionsFromCbu(@PathVariable Long cbu){
 		return accountService.getTransactionsFromCbu(cbu);
 	}
