@@ -2,11 +2,15 @@ package com.aninfo.service;
 
 import com.aninfo.exceptions.DepositNegativeSumException;
 import com.aninfo.exceptions.InsufficientFundsException;
+import com.aninfo.exceptions.InvalidTransactionTypeException;
 import com.aninfo.model.Account;
+import com.aninfo.model.Transaction;
 import com.aninfo.repository.AccountRepository;
+import com.aninfo.repository.TransactionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.InvalidTransactionException;
 import javax.transaction.Transactional;
 import java.util.Collection;
 import java.util.Optional;
@@ -16,6 +20,8 @@ public class AccountService {
 
     @Autowired
     private AccountRepository accountRepository;
+    @Autowired
+    private TransactionService transactionService;
 
     public Account createAccount(Account account) {
         return accountRepository.save(account);
@@ -59,10 +65,41 @@ public class AccountService {
         }
 
         Account account = accountRepository.findAccountByCbu(cbu);
-        account.setBalance(account.getBalance() + sum);
+        account.setBalance(account.getBalance() + transactionService.promo(sum));
         accountRepository.save(account);
 
         return account;
     }
 
+    public Transaction createDeposit(Transaction transaction){
+        Account account = accountRepository.findAccountByCbu(transaction.getCbu());
+        if (account == null){
+            throw new InvalidTransactionTypeException("account doesn't exist");
+        }
+        deposit(account.getCbu(), transaction.getValue());
+
+        return transactionService.createDeposit(transaction);
+    }
+
+    public Transaction newWithdraw(Transaction transaction) {
+        Account account = accountRepository.findAccountByCbu((transaction.getCbu()));
+        if (account == null) {
+            throw new InvalidTransactionTypeException("account doesn's exist");
+        }
+        withdraw(account.getCbu(), transaction.getValue());
+
+        return transactionService.newWithdraw(transaction);
+    }
+
+    public void deleteTransaction(Long id) {
+        transactionService.deleteTransaction(id);
+    }
+
+    public Optional<Transaction> getTransaction(Long id) {
+        return transactionService.getTransaction(id);
+    }
+
+    public Collection<Transaction> getTransactionsFromCbu(Long cbu) {
+        return transactionService.getTransactionsFromCbu(cbu);
+    }
 }
